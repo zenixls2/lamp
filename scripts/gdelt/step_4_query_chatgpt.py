@@ -1,5 +1,5 @@
 import os
-import openai
+from llama_cpp import Llama
 import elara
 from concurrent.futures import ThreadPoolExecutor
 
@@ -15,7 +15,8 @@ def read_text_file(fn):
 
 class EventQuery:
     def __init__(self, api_key, prompt_folder: str, num_prompts: int = 12):
-        openai.api_key = api_key
+        model_path = os.environ["MODEL_PATH"]
+        self.llm = Llama(model_path=model_path, chat_format="llama-2")
         self.setup_msgs = []
 
         # process prompts
@@ -64,11 +65,8 @@ class EventQuery:
             'role': 'user',
             'content': msg
         }]
-        completions = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=msg_list,
-            stream=False
-        )
+        completions = self.llm.create_chat_completion(
+            messages=msg_list)
         print('Usage:', completions['usage']['total_tokens'])
         body = completions['choices'][0]['message']['content']
         return body
